@@ -8,30 +8,54 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-def get_product_urls(driver, url):
-    product_urls = []
+def get_pages(driver, url):
+    #masivi linkebistvis
+    page_urls = []
+
     driver.get(url)
-
-    # wait for page to load
-    wait = WebDriverWait(driver, 10)
-
-    try:
-        products = wait.until(EC.presence_of_all_elements_located(
-            (By.CSS_SELECTOR, ".styled__CardWrapper-sc-1gjp82p-0.eknzBd")
-        ))
-    except Exception as e:
-        print("Error waiting for product elements:", e)
-        return None
+    WebDriverWait(driver, 10)
     
-    if products:
-        for product in products:
-            try:
-                anchor = product.find_element(By.TAG_NAME, "a")
-                prd_url = anchor.get_attribute("href")
-                print(prd_url)
-                product_urls.append(prd_url)
-            except Exception as e:
-                print("error extracting url from product.")
+    page = 0
+    try:
+        while page < 7:
+            page += 1
+            url = f"https://veli.store/category/teqnika/mobilurebi-aqsesuarebi/mobiluri-telefonebi/60/?page={page}"    
+            page_urls.append(url)
+            # print(page_urls)
+    except Exception as e:
+        print("error generating page")
+
+    return page_urls   
+
+
+def get_product_urls(driver, page):
+
+    product_urls = []
+    
+    for url in page:
+    
+        driver.get(url)
+
+        # wait for page to load
+        wait = WebDriverWait(driver, 10)
+
+        try:
+            products = wait.until(EC.presence_of_all_elements_located(
+                (By.CSS_SELECTOR, ".styled__CardWrapper-sc-1gjp82p-0.eknzBd")
+            ))
+        except Exception as e:
+            print("Error waiting for product elements:", e)
+            return None
+        
+        if products:
+            for product in products:
+                try:
+                    anchor = product.find_element(By.TAG_NAME, "a")
+                    prd_url = anchor.get_attribute("href")
+                    print(prd_url)
+                    product_urls.append(prd_url)
+                except Exception as e:
+                    print("error extracting url from product.")
     return product_urls
    
 
@@ -88,8 +112,9 @@ if __name__ == '__main__':
     options.add_argument("--headless") 
     driver = webdriver.Chrome(options=options)
 
-    url = "https://veli.store/category/teqnika/mobilurebi-aqsesuarebi/mobiluri-telefonebi/60/?page=3"
-    urls = get_product_urls(driver, url)
+    url = f"https://veli.store/category/teqnika/mobilurebi-aqsesuarebi/mobiluri-telefonebi/60/?page=1"
+    page = get_pages(driver, url)
+    urls = get_product_urls(driver, page)
     file_name = "products.csv"
     field_names = ["image_url", "title", "productid", "price"]
 
@@ -97,8 +122,6 @@ if __name__ == '__main__':
         # get product details
         product_details = get_product_details(driver, urls)
         save_to_csv(file_name, field_names,product_details)
-        
-
     else:
         print("no product found.")
 
