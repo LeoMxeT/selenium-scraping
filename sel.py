@@ -62,7 +62,7 @@ def get_product_urls(driver, page):
 
 def get_product_details(driver, urls):
     product_details = []
-    for url in tqdm(urls[:2]):
+    for url in tqdm(urls):
 
         driver.get(url)
 
@@ -75,12 +75,10 @@ def get_product_details(driver, urls):
             image = wait.until(EC.presence_of_element_located(
                 (By.CSS_SELECTOR, ".styled__PictureSlide-sc-1arg8l9-12.iSoEUK img")))
             image_url = image.get_attribute("src")
-            if image_url:
-                details["image_url"] = image_url
+            details["image_url"] = image_url
 
             title = driver.find_element("css selector", "h1.title")
             details["title"] = title.text
-
 
             productid = driver.find_element(By.CLASS_NAME, 'product-id')
             details["productid"] = productid.text
@@ -88,6 +86,11 @@ def get_product_details(driver, urls):
             price = driver.find_element(By.CLASS_NAME, "price")
             newprice = driver.execute_script("return arguments[0].childNodes[0].textContent;", price)
             details["price"] = float(newprice)
+
+
+            description = driver.find_elements(By.CSS_SELECTOR, ".server_html li")
+            details["description"] = [element.text for element in description]
+
             product_details.append(details)
 
         except Exception as e:
@@ -116,7 +119,7 @@ if __name__ == '__main__':
     page = get_pages(driver, url)
     urls = get_product_urls(driver, page)
     file_name = "products.csv"
-    field_names = ["image_url", "title", "productid", "price"]
+    field_names = ["image_url", "title", "productid", "price", "description"]
 
     if urls:
         # get product details
