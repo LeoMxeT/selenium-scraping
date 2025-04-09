@@ -1,18 +1,19 @@
 
+import pymongo
+from pymongo import MongoClient
 import csv
 import os
 from tqdm import tqdm
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.options import Options                 
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
-def get_pages(driver, url):
-    #masivi linkebistvis
+def get_pages(driver, url):                                
     page_urls = []
 
-    driver.get(url)
+                                                                                                                                                                                                                 
     WebDriverWait(driver, 10)
     
     page = 0
@@ -21,7 +22,6 @@ def get_pages(driver, url):
             page += 1
             url = f"https://veli.store/category/teqnika/mobilurebi-aqsesuarebi/mobiluri-telefonebi/60/?page={page}"    
             page_urls.append(url)
-            # print(page_urls)
     except Exception as e:
         print("error generating page")
 
@@ -36,7 +36,6 @@ def get_product_urls(driver, page):
     
         driver.get(url)
 
-        # wait for page to load
         wait = WebDriverWait(driver, 10)
 
         try:
@@ -57,19 +56,17 @@ def get_product_urls(driver, page):
                 except Exception as e:
                     print("error extracting url from product.")
     return product_urls
-   
 
 
 def get_product_details(driver, urls):
+
     product_details = []
-    for url in tqdm(urls):
+    for url in tqdm(urls[:2]):
 
         driver.get(url)
 
-        # wait for page to load
         wait = WebDriverWait(driver, 10)
         details = {}
-
 
         try:
             image = wait.until(EC.presence_of_element_located(
@@ -86,7 +83,6 @@ def get_product_details(driver, urls):
             price = driver.find_element(By.CLASS_NAME, "price")
             newprice = driver.execute_script("return arguments[0].childNodes[0].textContent;", price)
             details["price"] = float(newprice)
-
 
             description = driver.find_elements(By.CSS_SELECTOR, ".server_html li")
             details["description"] = [element.text for element in description]
@@ -107,12 +103,14 @@ def save_to_csv(file_name, field_names,product_details):
                 writer.writeheader()
                 for product in product_details:
                     writer.writerow(product)
+    
+
 
 
 if __name__ == '__main__':
 
     options = Options()
-    options.add_argument("--headless") 
+    # options.add_argument("--headless") 
     driver = webdriver.Chrome(options=options)
 
     url = f"https://veli.store/category/teqnika/mobilurebi-aqsesuarebi/mobiluri-telefonebi/60/?page=1"
@@ -127,9 +125,17 @@ if __name__ == '__main__':
         save_to_csv(file_name, field_names,product_details)
     else:
         print("no product found.")
+    
+    client = MongoClient("mongodb://localhost:27017/")
+    db = client["Products"]
+    collection = db["Products details"]
+    
+    if product_details:
+        try:
+            collection.insert_many(product_details)
+            print(f"inserted {len(product_details)} documents to mongodb database")
+        except Exception as e:
+            print(e)
+            
 
-    
-    
-    
-    
     driver.quit()
