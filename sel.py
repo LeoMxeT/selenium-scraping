@@ -13,15 +13,21 @@ from selenium.webdriver.common.by import By
 def get_pages(driver, url):                                
     page_urls = []
 
-                                                                                                                                                                                                                 
+    driver.get(url)                                                                                                                                                                                   
     WebDriverWait(driver, 10)
     
-    page = 0
     try:
-        while page < 7:
+        buttons = driver.find_elements(
+            By.CSS_SELECTOR, ".pagination-buttons .styled__PaginationButton-sc-183mmht-30.cJTkok")
+        last_page = buttons[-1]
+        total_pages = int(last_page.text)
+        page = 0
+
+        while page < (total_pages):
             page += 1
             url = f"https://veli.store/category/teqnika/mobilurebi-aqsesuarebi/mobiluri-telefonebi/60/?page={page}"    
             page_urls.append(url)
+
     except Exception as e:
         print("error generating page")
 
@@ -110,7 +116,7 @@ def save_to_csv(file_name, field_names,product_details):
 if __name__ == '__main__':
 
     options = Options()
-    # options.add_argument("--headless") 
+    options.add_argument("--headless") 
     driver = webdriver.Chrome(options=options)
 
     url = f"https://veli.store/category/teqnika/mobilurebi-aqsesuarebi/mobiluri-telefonebi/60/?page=1"
@@ -123,19 +129,21 @@ if __name__ == '__main__':
         # get product details
         product_details = get_product_details(driver, urls)
         save_to_csv(file_name, field_names,product_details)
+
+        client = MongoClient("mongodb://localhost:27017/")
+        db = client["Products"]
+        collection = db["Products details"]
+
+        if product_details:
+            try:
+                collection.insert_many(product_details)
+                print(f"inserted {len(product_details)} documents to mongodb database")
+            except Exception as e:
+                print(e)
+
     else:
         print("no product found.")
     
-    client = MongoClient("mongodb://localhost:27017/")
-    db = client["Products"]
-    collection = db["Products details"]
-    
-    if product_details:
-        try:
-            collection.insert_many(product_details)
-            print(f"inserted {len(product_details)} documents to mongodb database")
-        except Exception as e:
-            print(e)
-            
+
 
     driver.quit()
