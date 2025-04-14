@@ -10,6 +10,29 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 
+
+def get_other_category_url(driver, url):
+    category_url = ""    
+    driver.get(url)
+    try: 
+        category = driver.find_elements(By.CSS_SELECTOR, ".sub-category .sub")
+        first_url = category[0]
+        source = first_url.get_attribute("src")
+        category_url.append(first_url)
+
+    except Exception as e:
+        print(e)
+
+    return category_url
+
+
+def get_in_category(driver, category_url):
+    smart_watch = ""
+    driver.get(category_url)
+
+    product_url = driver.find_elements
+
+
 def get_pages(driver, url):                                
     page_urls = []
 
@@ -109,8 +132,6 @@ def save_to_csv(file_name, field_names,product_details):
                 writer.writeheader()
                 for product in product_details:
                     writer.writerow(product)
-    
-
 
 
 if __name__ == '__main__':
@@ -122,6 +143,7 @@ if __name__ == '__main__':
     url = f"https://veli.store/category/teqnika/mobilurebi-aqsesuarebi/mobiluri-telefonebi/60/?page=1"
     page = get_pages(driver, url)
     urls = get_product_urls(driver, page)
+    category_url = get_other_category_url(driver, url)
     file_name = "products.csv"
     field_names = ["image_url", "title", "productid", "price", "description"]
 
